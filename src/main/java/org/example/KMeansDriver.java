@@ -50,10 +50,13 @@ public class KMeansDriver {
 
         boolean converged = false;
         int iterations = 0;
+
+        long startTime = System.nanoTime();
         while(!converged && iterations<MAX_ITER){
             iterations++;
             System.out.println("Iteration: " + iterations);
 
+            long startIteration = System.nanoTime();
             Job job = null;
             try {
                 job = Job.getInstance(config, "KMeans");
@@ -82,18 +85,23 @@ public class KMeansDriver {
             } catch (Exception e) {
                 e.printStackTrace();
             }
+            long endIteration = System.nanoTime();
+            long iterationTime = endIteration - startIteration;
+            System.out.println("Iteration Execution Time: " + (iterationTime / 1_000_000) + " milliseconds");
 
             // Check for convergence
             Path newCentroidsPath = new Path(outputPath + "/part-r-00000");
             converged = checkConvergence(fs, centroidsPath, newCentroidsPath, k);
-            System.out.println(converged);
 
             // Update centroids for the next iteration
             fs.delete(centroidsPath, true);
             fs.rename(newCentroidsPath, centroidsPath);
             fs.delete(outputPath, true);
         }
+        long endTime = System.nanoTime();
+        long runTime = endTime - startTime;
         System.out.println("K-Means finished in " + iterations + " iterations.");
+        System.out.println("Execution Time: " + (runTime / 1_000_000) + " milliseconds");
 
         kmeansResult(config,inputPath, outputPath);
     }
